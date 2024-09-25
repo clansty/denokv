@@ -121,9 +121,6 @@ impl TryFrom<pb::AtomicWrite> for AtomicWrite {
       total_payload_size += mutation.key.len();
       let value_size =
         mutation.value.as_ref().map(|v| v.data.len()).unwrap_or(0);
-      if value_size > limits::MAX_VALUE_SIZE_BYTES {
-        return Err(ConvertError::ValueTooLong);
-      }
       total_payload_size += value_size;
 
       let kind = match (mutation.mutation_type(), mutation.value) {
@@ -181,9 +178,6 @@ impl TryFrom<pb::AtomicWrite> for AtomicWrite {
 
     let mut enqueues = Vec::with_capacity(atomic_write.enqueues.len());
     for enqueue in atomic_write.enqueues {
-      if enqueue.payload.len() > limits::MAX_VALUE_SIZE_BYTES {
-        return Err(ConvertError::ValueTooLong);
-      }
       total_payload_size += enqueue.payload.len();
       if enqueue.keys_if_undelivered.len() > limits::MAX_QUEUE_UNDELIVERED_KEYS
       {
@@ -228,9 +222,6 @@ impl TryFrom<pb::AtomicWrite> for AtomicWrite {
       });
     }
 
-    if total_payload_size > limits::MAX_TOTAL_MUTATION_SIZE_BYTES {
-      return Err(ConvertError::AtomicWriteTooLarge);
-    }
 
     Ok(AtomicWrite {
       checks,
