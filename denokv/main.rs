@@ -268,7 +268,7 @@ async fn run_sync(
 ) -> anyhow::Result<()> {
   let mut s3_config = aws_config::from_env()
     .sleep_impl(Arc::new(TokioSleep::new()))
-    .retry_config(RetryConfig::standard().with_max_attempts(std::u32::MAX));
+    .retry_config(RetryConfig::standard().with_max_attempts(u32::MAX));
 
   if let Some(endpoint) = &options.s3_endpoint {
     s3_config = s3_config.endpoint_url(endpoint);
@@ -348,7 +348,8 @@ fn open_sqlite(
   let sqlite = Sqlite::new(
     || {
       Ok((
-        Connection::open_with_flags(path, flags)?,
+        Connection::open_with_flags(path, flags)
+          .map_err(|e| deno_error::JsErrorBox::generic(e.to_string()))?,
         Box::new(rand::rngs::StdRng::from_entropy()),
       ))
     },
@@ -493,7 +494,7 @@ async fn watch_endpoint(
   timer.set_missed_tick_behavior(MissedTickBehavior::Delay);
   let ping_stream = unfold(timer, |mut timer| async move {
     timer.tick().await;
-    Some((Ok::<_, anyhow::Error>(vec![]), timer))
+    Some((Ok::<_, deno_error::JsErrorBox>(vec![]), timer))
   })
   .boxed();
 
